@@ -59,8 +59,8 @@ const TrackTrainPage: React.FC = () => {
 
   const handleSimulationToggle = async () => {
     const url = simulationRunning
-      ? 'https://realtime-rail-safety-simulation-alerts-application-kdsec2d9i.vercel.app/stop-simulation'
-      : 'https://realtime-rail-safety-simulation-alerts-application-kdsec2d9i.vercel.app/start-simulation';
+      ? 'https://realtime-rail-safety-simulation-alerts-application-pfyb9hnyh.vercel.app/stop-simulation'
+      : 'https://realtime-rail-safety-simulation-alerts-application-pfyb9hnyh.vercel.app/start-simulation';
 
     try {
       const response = await fetch(url, {
