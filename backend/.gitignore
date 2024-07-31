@@ -41,9 +41,8 @@ next-env.d.ts
 
 #firebase credentials
 /realtimeTrainadmin.json
-/firebaseConfig.js
-.firebase
-/firebase.json
-/.firebaserc
+
+
+
 
 .vercel
