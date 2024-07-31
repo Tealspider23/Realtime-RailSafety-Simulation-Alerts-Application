@@ -4,14 +4,13 @@ const { startSimulation, stopSimulation } = require('./simulateTrainData');
 const cors = require('cors');
 
 
-const allowedOrigins = ["https://realtime-rail-safety-simulation-alerts-application-lxaa.vercel.app/"] ;
 const app = express();
 const port = 5000;
 
 app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: 'https://realtime-rail-safety-simulation-alerts-application-lxaa.vercel.app', // Frontend URL
+  methods: 'GET,POST',
+  allowedHeaders: 'Content-Type',
 }));
 app.use(express.json());
 

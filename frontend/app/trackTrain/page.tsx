@@ -61,7 +61,7 @@ const TrackTrainPage: React.FC = () => {
     const url = simulationRunning
       ? 'https://realtime-rail-safety-simulation-alerts-application.vercel.app/stop-simulation'
       : 'https://realtime-rail-safety-simulation-alerts-application.vercel.app/start-simulation';
-
+  
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -69,13 +69,13 @@ const TrackTrainPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
       });
-
+  
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+  
       setSimulationRunning(!simulationRunning);
-
+  
       if (!simulationRunning) {
         setTrains(trains.map(train => ({
           ...train,
@@ -88,6 +88,7 @@ const TrackTrainPage: React.FC = () => {
       console.error('Error toggling simulation:', error);
     }
   };
+  
 
   return (
     <div className="flex h-screen">
