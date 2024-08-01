@@ -6,6 +6,7 @@ const { loadGeoJson, getLineStringFeatures, parseLineStringCoordinates } = requi
 const { handleBridgeDisaster, handleDerailment, handleTrainStop, handleTrainCrash } = require('./trainEventHandlers');
 
 let simulationIntervalId;
+let wss; // WebSocket server instance
 let trackCoordinates = {};
 let trainPositions = [];
 const numTrains = 3; // Updated to 3 trains
@@ -209,48 +210,54 @@ const simulateTrainData = async () => {
           latitude: currentPosition[1],
           longitude: currentPosition[0],
         },
-        speed: speed,
-        status: RISK_LEVELS.GREEN, // Default to GREEN, will be updated later
-        advisory: 'All clear'
+        speed,
+        status: RISK_LEVELS.GREEN,
       };
     });
 
-    // Update train advisories and statuses
-    trains.forEach((train, i) => {
-      const otherTrains = trains.filter((_, j) => j !== i);
+    // Calculate advisories and risk levels for each train
+    trains.forEach((train, index) => {
+      const otherTrains = trains.filter((_, otherIndex) => otherIndex !== index);
       const advisories = calculateAdvisory(train, otherTrains);
-      const highestRisk = advisories.reduce((highest, advisory) => {
-        if (advisory.level === RISK_LEVELS.RED) return advisory.level;
-        if (advisory.level === RISK_LEVELS.ORANGE && highest !== RISK_LEVELS.RED) return advisory.level;
-        if (advisory.level === RISK_LEVELS.YELLOW && highest === RISK_LEVELS.GREEN) return advisory.level;
-        return highest;
-      }, RISK_LEVELS.GREEN);
+      train.advisory = advisories;
 
-      trains[i].status = highestRisk;
-      trains[i].advisory = advisories.find(advisory => advisory.level === highestRisk).message;
+      // Determine the highest risk level among advisories
+      train.status = advisories.reduce((maxLevel, advisory) => {
+        if (advisory.level === RISK_LEVELS.RED) return RISK_LEVELS.RED;
+        if (advisory.level === RISK_LEVELS.ORANGE && maxLevel !== RISK_LEVELS.RED) return RISK_LEVELS.ORANGE;
+        if (advisory.level === RISK_LEVELS.YELLOW && maxLevel === RISK_LEVELS.GREEN) return RISK_LEVELS.YELLOW;
+        return maxLevel;
+      }, RISK_LEVELS.GREEN);
     });
 
-    await Promise.all(trains.map(async (train) => {
-      const trainRef = ref(database, `trains/${train.id}`);
-      await set(trainRef, train);
-    }));
+    // Send updated train data to all WebSocket clients
+    if (wss) {
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(trains));
+        }
+      });
+    }
 
-    //console.log('Train data simulated and stored in Firebase Realtime Database.');
+    await set(ref(database, 'trains'), trains);
+    console.log('Train data updated in Firebase and sent via WebSocket');
   } catch (error) {
-    console.error('Error simulating train data:', error);
+    console.error('Error in train simulation:', error);
   }
 };
 
 const startSimulation = () => {
+  if (simulationIntervalId) {
+    clearInterval(simulationIntervalId);
+  }
   simulationIntervalId = setInterval(simulateTrainData, timeStep * 1000);
-  console.log('Train data simulation started.');
 };
 
 const stopSimulation = () => {
-  clearInterval(simulationIntervalId);
-  console.log("Simulation stopped.")
+  if (simulationIntervalId) {
+    clearInterval(simulationIntervalId);
+    simulationIntervalId = null;
+  }
 };
 
-
-
-module.exports = { startSimulation, stopSimulation };
+module.exports = { startSimulation, stopSimulation, setWebSocketServer: (wsServer) => { wss = wsServer; } };

@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import 'leaflet/dist/leaflet.css';
 
 import { Button } from '@/components/ui/button';
+import {WebSocket} from 'ws';
 
 
 interface Train {
@@ -34,6 +35,7 @@ const TrackTrainPage: React.FC = () => {
   ]);
   const [selectedTrain, setSelectedTrain] = useState<Train | null>(null);
   const [simulationRunning, setSimulationRunning] = useState(false);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
   useEffect(() => {
     const trainRefs = ['train1', 'train2', 'train3'].map(trainId => ref(database, `trains/${trainId}`));
@@ -61,7 +63,7 @@ const TrackTrainPage: React.FC = () => {
     const url = simulationRunning
       ? 'https://realtime-rail-safety-simulation-alerts-application.vercel.app/stop-simulation'
       : 'https://realtime-rail-safety-simulation-alerts-application.vercel.app/start-simulation';
-  
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -69,26 +71,114 @@ const TrackTrainPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
-      setSimulationRunning(!simulationRunning);
-  
-      if (!simulationRunning) {
+
+      // Toggle the simulationRunning state
+      setSimulationRunning(prev => !prev);
+
+      if (simulationRunning) {
+        // Stop the simulation
+        if (socket) {
+          socket.close();
+          setSocket(null);
+        }
         setTrains(trains.map(train => ({
           ...train,
           speed: 0,
           status: 'All clear',
-          advisory: 'All clear'
+          advisory: 'All clear',
         })));
+      } else {
+        // Start the simulation and initiate WebSocket connection
+        initializeWebSocket();
       }
     } catch (error) {
       console.error('Error toggling simulation:', error);
     }
   };
-  
+
+  // WebSocket initialization function
+  const initializeWebSocket = () => {
+    // Close any existing connection
+    if (socket) {
+      socket.close();
+    }
+
+    // Initialize new WebSocket connection
+    const newSocket = new WebSocket('wss://realtime-rail-safety-simulation-alerts-application.vercel.app');
+
+    newSocket.onopen = () => {
+      console.log('WebSocket connection opened');
+    };
+
+    newSocket.onmessage = (event) => {
+      try {
+        let messageData = event.data;
+
+        // If data is a Buffer or ArrayBuffer, convert it to string
+        if (typeof messageData !== 'string') {
+          if (messageData instanceof ArrayBuffer) {
+            // Convert ArrayBuffer to string
+            messageData = new TextDecoder('utf-8').decode(new Uint8Array(messageData));
+          } else if (Array.isArray(messageData)) {
+            // Handle the case where messageData is an array of Buffers
+            messageData = messageData.map(buffer => buffer.toString()).join('');
+          } else if (typeof Buffer !== 'undefined' && messageData instanceof Buffer) {
+            // Handle Node.js Buffer case
+            messageData = messageData.toString('utf-8');
+          } else {
+            throw new Error('Unsupported message data type');
+          }
+        }
+
+        const updatedTrains = JSON.parse(messageData);
+        setTrains(updatedTrains);
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+
+    newSocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    newSocket.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    // Update the state with the new WebSocket
+    setSocket(newSocket);
+  };
+
+  // Cleanup WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [socket]);
+
+  // Cleanup WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [socket]);
+
+  // Cleanup WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [socket]);
 
   return (
     <div className="flex h-screen">

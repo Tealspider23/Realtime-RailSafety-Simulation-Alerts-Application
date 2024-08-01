@@ -1,37 +1,48 @@
-// server.js
 const express = require('express');
-const { startSimulation, stopSimulation } = require('./simulateTrainData');
-const cors = require('cors');
-
+const { createServer } = require('http');
+const WebSocket = require('ws');
+const { startSimulation, stopSimulation, setWebSocketServer } = require('./simulateTrainData');
 
 const app = express();
-const port = 5000;
+const server = createServer(app);
+const wss = new WebSocket.Server({ server });
 
-app.use(cors({
-  origin: 'https://realtime-rail-safety-simulation-alerts-application-lxaa.vercel.app', // Frontend URL
-  methods: 'GET,POST',
-  allowedHeaders: 'Content-Type',
-}));
-app.use(express.json());
+setWebSocketServer(wss);
 
+// Endpoint to start the simulation
 app.post('/start-simulation', (req, res) => {
-  try {
-    startSimulation();
-    res.status(200).send('Simulation started.');
-  } catch (error) {
-    res.status(500).send('Error starting simulation: ' + error.message);
-  }
+  startSimulation();
+  res.status(200).send('Simulation started');
 });
 
+// Endpoint to stop the simulation
 app.post('/stop-simulation', (req, res) => {
-  try {
-    stopSimulation();
-    res.status(200).send('Simulation stopped.');
-  } catch (error) {
-    res.status(500).send('Error stopping simulation: ' + error.message);
-  }
+  stopSimulation();
+  res.status(200).send('Simulation stopped');
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+wss.on('connection', (ws) => {
+  console.log('New client connected');
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
+});
+
+app.get('/', (req, res) => {
+  res.send('WebSocket server is running');
+});
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  stopSimulation(); // Ensure simulation stops
+  wss.close();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
