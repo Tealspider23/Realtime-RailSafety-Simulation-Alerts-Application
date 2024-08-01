@@ -2,10 +2,16 @@ const express = require('express');
 const { createServer } = require('http');
 const WebSocket = require('ws');
 const { startSimulation, stopSimulation, setWebSocketServer } = require('./simulateTrainData');
+const cors = require('cors');
 
 const app = express();
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
+
+// Enable CORS for your frontend origin
+app.use(cors({
+  origin: ['https://realtime-rail-safety-simulation-alerts-application-lxaa.vercel.app']
+}));
 
 setWebSocketServer(wss);
 
@@ -46,3 +52,4 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+
