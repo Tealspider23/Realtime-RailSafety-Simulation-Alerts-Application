@@ -3,6 +3,7 @@ const { createServer } = require('http');
 const WebSocket = require('ws');
 const { startSimulation, stopSimulation, setWebSocketServer } = require('./simulateTrainData');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 const server = createServer(app);
@@ -10,7 +11,7 @@ const wss = new WebSocket.Server({ server });
 
 // Enable CORS for your frontend origin
 app.use(cors({
-  origin: 'https://realtime-rail-safety-simulation-alerts-application-lxaa.vercel.app', // Replace with your frontend origin
+  origin: process.env.ACCESS_CONTROL_ALLOW_ORIGIN,
   methods: ['GET', 'POST'], // List allowed HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization',] // List allowed headers
 }));
