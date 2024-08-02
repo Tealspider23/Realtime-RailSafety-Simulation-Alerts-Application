@@ -2,8 +2,8 @@ const express = require('express');
 const { createServer } = require('http');
 const WebSocket = require('ws');
 const { startSimulation, stopSimulation, setWebSocketServer } = require('./simulateTrainData');
-const cors = require('cors');
 require('dotenv').config();
+const cors = require('cors')
 
 const app = express();
 const server = createServer(app);
@@ -13,7 +13,7 @@ const wss = new WebSocket.Server({ server });
 app.use(cors({
   origin: process.env.ACCESS_CONTROL_ALLOW_ORIGIN,
   methods: ['GET', 'POST' ,'OPTIONS'], // List allowed HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization',] // List allowed headers
+  allowedHeaders: ['Content-Type', 'Authorization',],// List allowed headers
 }));
 
 setWebSocketServer(wss);
