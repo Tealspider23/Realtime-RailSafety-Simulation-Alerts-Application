@@ -11,7 +11,7 @@ const wss = new WebSocket.Server({ server });
 
 // Enable CORS for your frontend origin
 app.use(cors({
-  origin: process.env.ACCESS_CONTROL_ALLOW_ORIGIN,
+  origin: '*',
   methods: ['GET', 'POST' ,'OPTIONS'], // List allowed HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization',],// List allowed headers
 }));
