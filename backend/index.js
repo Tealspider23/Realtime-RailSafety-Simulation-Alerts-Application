@@ -11,7 +11,7 @@ const wss = new WebSocket.Server({ server });
 
 // Enable CORS for your frontend origin
 app.use(cors({
-  origin: '*',
+  origin: 'https://realtime-rail-safety-simulation-alerts-application-lxaa.vercel.app/',
   methods: ['GET', 'POST' ,'OPTIONS'], // List allowed HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization',],// List allowed headers
 }));
